@@ -58,7 +58,7 @@ const LoginPage =({navigation}) => {
       <CustomButton
         buttonText="Login"
         setWidth="80%"
-        handleOnPress={()=> dispatch(login({email,password}))}
+        handleOnPress={()=> dispatch(login({email, password}))}
         buttonColor='blue'
         pressedButtonColor='gray'
       />
