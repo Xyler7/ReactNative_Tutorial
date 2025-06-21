@@ -22,7 +22,7 @@ const LoginPage =({navigation}) => {
 
   //userSlice içindeki verileri okuma
   // const emailİsim = useSelector((state))=> state.user.email   şeklinde kullanımı da var
-  const { isLoading } = useSelector((state)=>state.user)
+  const { isLoading, error } = useSelector((state)=>state.user)
 
   //userSlice içindeki reducer yapılarını kullanma ve veri gönderme
   const dispatch = useDispatch()
@@ -54,6 +54,8 @@ const LoginPage =({navigation}) => {
         handleValue={password}
         handlePlaceholder='Enter Your Password'
       /> 
+
+      <Text>{error}</Text>
 
       <CustomButton
         buttonText="Login"
