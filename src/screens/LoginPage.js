@@ -8,9 +8,9 @@ import {
   Image,
 } from 'react-native';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {Loading, CustomTextInput, CustomButton} from '../components' ;
-import {login} from '../redux/userSlice'
+import {login, autoLogin} from '../redux/userSlice'
 
 import { useSelector, useDispatch } from 'react-redux';
 import { setIsLoading } from '../redux/userSlice';
@@ -26,6 +26,13 @@ const LoginPage =({navigation}) => {
 
   //userSlice içindeki reducer yapılarını kullanma ve veri gönderme
   const dispatch = useDispatch()
+
+
+  //Did user login before? If yes, autoLogin
+  useEffect(() => {
+    dispatch(autoLogin())
+  }, [])
+  
 
 
 
