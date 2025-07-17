@@ -4,12 +4,17 @@ import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from "firebase
 import { db } from '../../firebaseConfig';
 import { CustomButton } from '../components';
 import { useState, useEffect } from 'react';
+import { useDispatch } from 'react-redux';
+import { logout } from '../redux/userSlice';
+
 
 const HomePage = () => {
 
   const [data, setData] = useState([])
   const[isSaved, setIsSaved] =useState(false)
   const [updateTheData, setUpdateTheData] = useState('')
+
+  const dispatch = useDispatch()
 
   console.log(isSaved)
   console.log( "data: ", data )
@@ -78,6 +83,13 @@ const HomePage = () => {
     }
   }
 
+  //LOGOUT
+  const handleLogout = async()=>{
+    dispatch(logout())
+    console.log("Cikis!")
+  }
+
+
   return (
     <View style={styles.container}>
       
@@ -132,6 +144,14 @@ const HomePage = () => {
       buttonColor={'blue'}
       pressedButtonColor={'gray'}
       handleOnPress={updateData}
+      />
+
+      <CustomButton
+      buttonText={"Logout"}
+      setWidth={"40%"}
+      buttonColor={'red'}
+      pressedButtonColor={'gray'}
+      handleOnPress={handleLogout}
       />
 
     </View>
