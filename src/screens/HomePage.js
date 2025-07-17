@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View, TextInput } from 'react-native'
+import { Pressable, StyleSheet, Text, View, TextInput, FlatList, SafeAreaView } from 'react-native'
 import React from 'react'
 import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from "firebase/firestore"; 
 import { db } from '../../firebaseConfig';
@@ -6,6 +6,7 @@ import { CustomButton } from '../components';
 import { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { logout } from '../redux/userSlice';
+import Animated, { BounceIn, FlipInYRight, PinWheel } from 'react-native-reanimated';
 
 
 const HomePage = () => {
@@ -88,32 +89,54 @@ const HomePage = () => {
     dispatch(logout())
     console.log("Cikis!")
   }
+  //
 
+const renderItem = ({item, index}) => {
+  
+  return (
+    <Animated.View
+      entering={FlipInYRight.delay((index + 1) * 100)}
+      style ={styles.flatListContainer}>
+        <Text>{item.id}</Text>
+        <Text>{item.title}</Text>
+        <Text>{item.content}</Text>
+    </Animated.View>
+  )
+}
 
   return (
-    <View style={styles.container}>
-      
-    <TextInput
-      value ={updateTheData}
-      onChangeText={setUpdateTheData}
-      placeholder='Enter Your Data: '
-      style={{borderWidth:1, width:'50%', paddingVertical:5, textAlign:'center', marginBottom:30}}
-    />
+    <SafeAreaView style={styles.container}>
 
-      {data.map((value,index) => {
+
+      {/* {data.map((value,index) => {
         return(
           <Pressable 
           onPress={()=> [updateData(value.id), setIsSaved(isSaved === false ? true : false)]} 
           key={index}>
-            <Text>{index}</Text>
-            <Text>{value?.id}</Text>
-            <Text>{value.title}</Text>  
-            <Text>{value.content}</Text>  
-            <Text>{value.lesson}</Text>                          
+          <Text>{index}</Text>
+          <Text>{value?.id}</Text>
+          <Text>{value.title}</Text>  
+          <Text>{value.content}</Text>  
+          <Text>{value.lesson}</Text>                          
           </Pressable>
-        )
-      })}
-      
+          )
+          })}
+          */}
+      <TextInput
+        value ={updateTheData}
+        onChangeText={setUpdateTheData}
+        placeholder='Enter Your Data: '
+        style={{borderWidth:1, width:'50%', paddingVertical:5, textAlign:'center', marginBottom:30}}
+      />
+      <Animated.FlatList
+        entering={PinWheel}
+        style= {styles.flatList}
+        data={data}
+        keyExtractor={ item => item.id}
+        renderItem={renderItem}
+      />
+
+
       <CustomButton
       buttonText={"Save"}
       setWidth={"40%"}
@@ -154,7 +177,7 @@ const HomePage = () => {
       handleOnPress={handleLogout}
       />
 
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -164,9 +187,22 @@ export default HomePage
 const styles = StyleSheet.create({
   container: {
     flex:1,
+    paddingTop:70,
+    paddingBottom:30,
     backgroundColor: '#fff',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'center', 
     backgroundColor:'#fbfbfb'
+  },
+  flatListContainer: {
+    flex:1,
+    borderWidth: 1, 
+    marginVertical:5,
+    alignItems:'center',
+    justifyContent: 'center'
+  },
+  flatList: {
+    width: '90%',
+    padding: 10
   }
 });
