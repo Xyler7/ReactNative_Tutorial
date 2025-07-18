@@ -1,63 +1,41 @@
 import { Pressable, StyleSheet, Text, View, TextInput, FlatList, SafeAreaView } from 'react-native'
-import React from 'react'
+import React, { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from "firebase/firestore"; 
 import { db } from '../../firebaseConfig';
 import { CustomButton } from '../components';
-import { useState, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
-import { logout } from '../redux/userSlice';
+
+import { useDispatch, useSelector } from 'react-redux';
 import Animated, { BounceIn, FlipInYRight, PinWheel } from 'react-native-reanimated';
+import AntDesign from '@expo/vector-icons/AntDesign';
+import Entypo from '@expo/vector-icons/Entypo';
+import { logout } from '../redux/userSlice';
+import { setUserInput, saveData } from '../redux/dataSlice';
+
 
 
 const HomePage = () => {
 
-  const [data, setData] = useState([])
-  const[isSaved, setIsSaved] =useState(false)
-  const [updateTheData, setUpdateTheData] = useState('')
-
+  const {data, userInput} = useSelector((state) => state.data);
   const dispatch = useDispatch()
 
-  console.log(isSaved)
-  console.log( "data: ", data )
+  console.log("userInput", userInput)
 
-  useEffect(() => {
-    getData()
-  }, [isSaved])
 
-  //SEND DATA TO FIREBASE
-  const sendData = async() =>{
-    try {
-      const docRef = await addDoc(collection(db, "reactNativeLessons"), {
-        title: "Zero to Hero",
-        content: "React Native Tutorial for Beginners",
-        lesson: 95 
-      });
-      console.log("Document written with ID: ", docRef.id),
-      getData();
-    } catch (e) {
-      console.error("Error adding document: ", e);
-    }
-  }
+  // //SEND DATA TO FIREBASE
+  // const saveData = async() =>{
+  //   try {
+  //     const docRef = await addDoc(collection(db, "todolist"), {
+  //       title: "Zero to Hero",
+  //       content: "React Native Tutorial for Beginners",
+  //       lesson: 95 
+  //     });
+  //     console.log("Document written with ID: ", docRef.id),
+  //     getData();
+  //   } catch (e) {
+  //     console.error("Error adding document: ", e);
+  //   }
+  // }
 
-  //GET DATA FROM FIREBASE
-
-  const getData= async() =>{
-
-    const allData = []
-
-    try {
-
-      const querySnapshot = await getDocs(collection(db, "reactNativeLessons"));
-      querySnapshot.forEach((doc) => {
-        //console.log(`${doc.id} => ${doc.data()}`);
-        allData.push({...doc.data(), id :doc.id})
-      });
-      setData(allData) 
-    
-    } catch (error) {
-      console.log(error)
-    }
-  }
 
   //DELETE DATA FROM DATABASE
   const deleteData = async(value) => {
@@ -70,36 +48,47 @@ const HomePage = () => {
     }
     }
 
-
 //UPDATE DATA FROM FIREBASE
-  const updateData = async(value) => {
-    try {
+  // const updateData = async(value) => {
+  //   try {
 
-      const lessonData = doc(db, "reactNativeLessons", value);
-      await updateDoc(lessonData, {
-        content: updateTheData,
-      });    
-    } catch (error) {
-      console.log(error)
-    }
-  }
+  //     const lessonData = doc(db, "reactNativeLessons", value);
+  //     await updateDoc(lessonData, {
+  //       content: updateTheData,
+  //     });    
+  //   } catch (error) {
+  //     console.log(error)
+  //   }
+  // }
 
   //LOGOUT
   const handleLogout = async()=>{
     dispatch(logout())
     console.log("Cikis!")
   }
-  //
 
+  const handleTextInput = (text) => {
+    dispatch(setUserInput(text))
+  }
+
+  //RENDER ITEM
 const renderItem = ({item, index}) => {
   
   return (
     <Animated.View
       entering={FlipInYRight.delay((index + 1) * 100)}
       style ={styles.flatListContainer}>
-        <Text>{item.id}</Text>
-        <Text>{item.title}</Text>
-        <Text>{item.content}</Text>
+
+        <Pressable 
+        onPress={() => {deleteData(item.id)}}
+        style={styles.iconContainer}>
+          <AntDesign name="checkcircle" size={24} color="black" />
+          <Entypo name="circle" size={24} color="black" />
+        </Pressable>
+        <View style= {styles.itemContainer}> 
+          <Text style={styles.itemTitle}>{item.title}</Text>
+          <Text>{item.content}</Text>
+        </View>
     </Animated.View>
   )
 }
@@ -107,27 +96,8 @@ const renderItem = ({item, index}) => {
   return (
     <SafeAreaView style={styles.container}>
 
+      <Text style={styles.Title}>TO DO LIST</Text>
 
-      {/* {data.map((value,index) => {
-        return(
-          <Pressable 
-          onPress={()=> [updateData(value.id), setIsSaved(isSaved === false ? true : false)]} 
-          key={index}>
-          <Text>{index}</Text>
-          <Text>{value?.id}</Text>
-          <Text>{value.title}</Text>  
-          <Text>{value.content}</Text>  
-          <Text>{value.lesson}</Text>                          
-          </Pressable>
-          )
-          })}
-          */}
-      <TextInput
-        value ={updateTheData}
-        onChangeText={setUpdateTheData}
-        placeholder='Enter Your Data: '
-        style={{borderWidth:1, width:'50%', paddingVertical:5, textAlign:'center', marginBottom:30}}
-      />
       <Animated.FlatList
         entering={PinWheel}
         style= {styles.flatList}
@@ -136,47 +106,22 @@ const renderItem = ({item, index}) => {
         renderItem={renderItem}
       />
 
+      <View style={ styles.userInputContainer}>
+        <TextInput
+            value ={userInput}
+            onChangeText={handleTextInput}
+            placeholder='Add To Do'
+            style={styles.textInput}
+            />
+          <CustomButton
+          buttonText={"SAVE"}
+          flexValue= {1}
+          buttonColor={'blue'}
+          pressedButtonColor={'gray'}
+          handleOnPress={() => dispatch(saveData(userInput))}
+          />
 
-      <CustomButton
-      buttonText={"Save"}
-      setWidth={"40%"}
-      buttonColor={'blue'}
-      pressedButtonColor={'gray'}
-      handleOnPress={sendData}
-      />
-
-      <CustomButton
-      buttonText={"Get Data"}
-      setWidth={"40%"}
-      buttonColor={'blue'}
-      pressedButtonColor={'gray'}
-      handleOnPress={getData}
-      />
-
-      <CustomButton
-      buttonText={"Delete Data"}
-      setWidth={"40%"}
-      buttonColor={'blue'}
-      pressedButtonColor={'gray'}
-      handleOnPress={deleteData}
-      />
-
-      <CustomButton
-      buttonText={"Update Data"}
-      setWidth={"40%"}
-      buttonColor={'blue'}
-      pressedButtonColor={'gray'}
-      handleOnPress={updateData}
-      />
-
-      <CustomButton
-      buttonText={"Logout"}
-      setWidth={"40%"}
-      buttonColor={'red'}
-      pressedButtonColor={'gray'}
-      handleOnPress={handleLogout}
-      />
-
+      </View>
     </SafeAreaView>
   );
 }
@@ -196,13 +141,58 @@ const styles = StyleSheet.create({
   },
   flatListContainer: {
     flex:1,
-    borderWidth: 1, 
-    marginVertical:5,
+    borderBottomWidth: 0.3,
+    marginVertical:10,
     alignItems:'center',
-    justifyContent: 'center'
+    justifyContent: 'space-between',
+    flexDirection: 'row',
   },
   flatList: {
     width: '90%',
     padding: 10
-  }
+  },
+
+  Title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: 'blue'
+  },
+
+  itemContainer: {
+    flex:1,
+    padding: 10,
+    marginLeft: 5,
+    marginBottom:5,
+    borderWidth: 0.5,
+    borderRadius: 10,
+    backgroundColor: '#f0f0f0',
+  },
+
+  itemTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  iconContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+  },
+  userInputContainer: {
+    width: '90%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  textInput: {
+    flex: 3,
+    height: 50,
+    borderWidth: 0.5,
+    borderRadius: 10,
+    textAlign: 'center',
+    paddingVertical: 5,
+    marginRight: 10,
+  },
 });
