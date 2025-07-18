@@ -50,12 +50,6 @@ export const dataSlice = createSlice({
     reducers: {
         setUserInput: (state, action) => {
             state.userInput = action.payload;
-        },
-        clearUserInput: (state) => {
-            state.userInput = null;
-        },
-        resetData: (state) => {
-            state.data = [];
         }
     },
     extraReducers: (builder) => {
@@ -74,7 +68,7 @@ export const dataSlice = createSlice({
             .addCase(saveData.pending, (state) => {
                 state.isLoading = true;
             })
-            .addCase(saveData.fulfilled, (state, action) => {
+            .addCase(saveData.fulfilled, (state) => {
                 state.isLoading = false;
                 state.isSaved = !state.isSaved; // Toggle saved state
                 state.userInput = null; // Clear user input after saving
