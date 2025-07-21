@@ -50,7 +50,15 @@ export const dataSlice = createSlice({
     reducers: {
         setUserInput: (state, action) => {
             state.userInput = action.payload;
+        },
+        toggleCheck: (state, action) => {
+            const id = action.payload;
+            const index = state.data.findIndex(item => item.id === id);
+            if (index !== -1) {
+                state.data[index].checked = !state.data[index].checked;
+            }
         }
+
     },
     extraReducers: (builder) => {
         builder
@@ -81,5 +89,5 @@ export const dataSlice = createSlice({
 
 })
 
-export const { setUserInput, clearUserInput, resetData } = dataSlice.actions;
+export const { setUserInput, clearUserInput, resetData, toggleCheck  } = dataSlice.actions;
 export default dataSlice.reducer

@@ -9,7 +9,7 @@ import Animated, { BounceIn, FlipInYRight, PinWheel } from 'react-native-reanima
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Entypo from '@expo/vector-icons/Entypo';
 import { logout } from '../redux/userSlice';
-import { setUserInput, saveData } from '../redux/dataSlice';
+import { setUserInput, saveData, toggleCheck  } from '../redux/dataSlice';
 
 
 
@@ -19,6 +19,8 @@ const HomePage = () => {
   const dispatch = useDispatch()
 
   console.log("userInput", userInput)
+
+
 
 
   // //SEND DATA TO FIREBASE
@@ -40,13 +42,22 @@ const HomePage = () => {
   //DELETE DATA FROM DATABASE
   const deleteData = async(value) => {
     try {
-      await deleteDoc(doc(db, "reactNativeLessons", value));
+      await deleteDoc(doc(db, "todolist", value));
       console.log("Delete Succesfull!")
       
-    } catch (error) {
-      console.log(error)
+      } catch (error) {
+        console.log(error)
+      }
     }
+
+    //CHANGE ICONS
+    const changeIcon = (isChecked) => {
+      if (isChecked) {
+        return <AntDesign name="checkcircle" size={24} color="black" />
+      } else {
+        return <Entypo name="circle" size={24} color="black" />
     }
+  }
 
 //UPDATE DATA FROM FIREBASE
   // const updateData = async(value) => {
@@ -62,7 +73,7 @@ const HomePage = () => {
   // }
 
   //LOGOUT
-  const handleLogout = async()=>{
+  const handleLogout = ()=>{
     dispatch(logout())
     console.log("Cikis!")
   }
@@ -79,16 +90,23 @@ const renderItem = ({item, index}) => {
       entering={FlipInYRight.delay((index + 1) * 100)}
       style ={styles.flatListContainer}>
 
-        <Pressable 
-        onPress={() => {deleteData(item.id)}}
-        style={styles.iconContainer}>
-          <AntDesign name="checkcircle" size={24} color="black" />
-          <Entypo name="circle" size={24} color="black" />
+        <Pressable
+          onPress={() => dispatch(toggleCheck(item.id))}
+          style={styles.iconContainer}>
+          {changeIcon(item.checked)}
         </Pressable>
+
         <View style= {styles.itemContainer}> 
           <Text style={styles.itemTitle}>{item.title}</Text>
           <Text>{item.content}</Text>
         </View>
+
+          {/* Delete item */}
+        <Pressable 
+          onPress={() => {deleteData(item.id)}}
+          style={styles.iconContainer}>
+          <AntDesign name="delete" size={20} color="black" style={{ padding: 5 }} />
+        </Pressable>
     </Animated.View>
   )
 }
