@@ -70,7 +70,6 @@ const renderItem = ({item, index}) => {
           <Text>{item.content}</Text>
         </View>
 
-          {/* Delete item */}
         <Pressable 
           onPress={() => {deleteData(item.id)}}
           style={styles.iconContainer}>

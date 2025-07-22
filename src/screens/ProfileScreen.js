@@ -34,17 +34,33 @@ const ProfileScreen = () => {
 
   // Firestore'a verileri kaydet
   const handleSave = async () => {
-    try {
-      await setDoc(doc(db, 'profiles', userId), profile);
-      setEditMode(false);
-    } catch (error) {
-      console.log('Profil kaydedilirken hata:', error);
+  try {
+    if (!userId) {
+      console.log("Kullanıcı giriş yapmamış.");
+      return;
     }
-  };
+
+    // Firebase'e gönderilecek güvenli veri yapısı
+    const profileData = {
+      fullName: profile.fullName || '',
+      email: profile.email || '',
+      phone: profile.phone || '',
+      username: profile.username || '',
+      social: profile.social || '',
+      photoURL: profile.photoURL || '',
+    };
+
+    await setDoc(doc(db, 'users', userId), profileData);
+    setEditMode(false);
+    console.log("Profil başarıyla kaydedildi.");
+  } catch (error) {
+    console.log('Profil kaydedilirken hata:', error);
+  }
+};
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Profil</Text>
+      <Text style={styles.header}>Profile</Text>
 
       {profile.photoURL ? (
         <Image source={{ uri: profile.photoURL }} style={styles.avatar} />

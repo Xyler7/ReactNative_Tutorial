@@ -110,6 +110,15 @@ export const userSlice= createSlice({
         setIsLoading:(state, action)=>{
             state.isLoading= action.payload
         },
+        setUser: (state, action) => {
+            if (action.payload) {
+            state.isAuth = true;
+            state.user = action.payload;
+            } else {
+            state.isAuth = false;
+            state.user = null;
+            state.token = null;
+            }}
     },
     extraReducers:(builder)=> {
         builder
