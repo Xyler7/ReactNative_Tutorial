@@ -1,11 +1,21 @@
 import LoginPage from "./LoginPage";
 import SingUpPage from "./SingUpPage";
 import HomePage from "./HomePage";
-import ProfilePage from "./ProfilePage";
+import ProfileScreen from "./ProfileScreen";
+import DoListScreen from "./DoListScreen";
+import TeamScreen from "./TeamScreen";
+import AgendaScreen from "./AgendaScreen";
+import SocialScreen from "./SocialScreen";
+import SettingsScreen from "./SettingsScreen";
 
 export {
-    LoginPage,
-    SingUpPage,
-    HomePage,
-    ProfilePage
-}
+  LoginPage,
+  SingUpPage,
+  HomePage,
+  ProfileScreen,
+  DoListScreen,
+  TeamScreen,
+  AgendaScreen,
+  SocialScreen,
+  SettingsScreen,
+};
