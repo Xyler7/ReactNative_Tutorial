@@ -5,7 +5,7 @@ import UserStack from './UserStack';
 import { useDispatch, useSelector } from 'react-redux';
 import { auth } from '../../firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
-import { setUser } from '../redux/userSlice';
+import { setUser, fetchUserProfile } from '../redux/userSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ActivityIndicator, View, Text } from 'react-native';
 
@@ -13,6 +13,20 @@ const RootNavigation = () => {
   const dispatch = useDispatch();
   const { isAuth } = useSelector((state) => state.user);
   const [loading, setLoading] = useState(true);
+
+  onAuthStateChanged(auth, async (user) => {
+  clearTimeout(timeoutId);
+
+  if (user) {
+    dispatch(setUser({ uid: user.uid, email: user.email, displayName: user.displayName }));
+    dispatch(fetchUserProfile(user.uid)); // <-- Profil bilgilerini getir
+  } else {
+    await AsyncStorage.removeItem('userToken');
+    dispatch(setUser(null));
+  }
+
+  setLoading(false);
+});
 
   useEffect(() => {
     let timeoutId;

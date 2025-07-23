@@ -12,10 +12,11 @@ const SingUpPage = ({navigation}) => {
 
   const dispatch = useDispatch();
 
-  const { isLoading } = useSelector(state => state.user)
+  const { isLoading, error } = useSelector(state => state.user);
 
   const handleRegister = ()=>{
     dispatch(register({email, password}))
+    {error && <Text style={{ color: 'red', marginBottom: 10 }}>{error}</Text>} //burası burada olmayabilir
   }
 
   if(isLoading) {

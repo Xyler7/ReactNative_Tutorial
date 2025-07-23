@@ -1,111 +1,160 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, Pressable, Image } from 'react-native';
+import {
+  View, Text, TextInput, StyleSheet,
+  Pressable, Image, ScrollView, Alert
+} from 'react-native';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../../firebaseConfig';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
+import { db, storage } from '../../firebaseConfig';
+import { useSelector } from 'react-redux';
+import { v4 as uuidv4 } from 'uuid';
+
 
 const ProfileScreen = () => {
-  const user = auth.currentUser;
+  const { user } = useSelector((state) => state.user);
   const userId = user?.uid;
 
   const [editMode, setEditMode] = useState(false);
-  const [profile, setProfile] = useState({
+  const [uploading, setUploading] = useState(false);
+  const [localProfile, setLocalProfile] = useState({
     fullName: '',
     email: user?.email || '',
     phone: '',
     username: user?.displayName || '',
     social: '',
-    photoURL: user?.photoURL || '',
+    photoURL: '',
   });
 
-  // Firestore'dan mevcut verileri çek
+  // Profili getir
   useEffect(() => {
     const fetchProfile = async () => {
       if (!userId) return;
-      const docRef = doc(db, 'profiles', userId);
+      const docRef = doc(db, 'users', userId);
       const docSnap = await getDoc(docRef);
-
       if (docSnap.exists()) {
-        setProfile({ ...profile, ...docSnap.data() });
+        setLocalProfile((prev) => ({
+          ...prev,
+          ...docSnap.data(),
+        }));
       }
     };
 
     fetchProfile();
   }, [userId]);
 
-  // Firestore'a verileri kaydet
+  // Firebase'e profil kaydet
   const handleSave = async () => {
-  try {
-    if (!userId) {
-      console.log("Kullanıcı giriş yapmamış.");
-      return;
+    try {
+      if (!userId) return;
+
+      await setDoc(doc(db, 'users', userId), {
+        ...localProfile,
+        email: user.email,
+        username: user.displayName,
+      });
+
+      setEditMode(false);
+      Alert.alert('Başarılı', 'Profil kaydedildi.');
+    } catch (error) {
+      console.log('❌ Profil kaydedilemedi:', error);
+      Alert.alert('Hata', 'Profil kaydedilirken bir hata oluştu.');
     }
+  };
 
-    // Firebase'e gönderilecek güvenli veri yapısı
-    const profileData = {
-      fullName: profile.fullName || '',
-      email: profile.email || '',
-      phone: profile.phone || '',
-      username: profile.username || '',
-      social: profile.social || '',
-      photoURL: profile.photoURL || '',
-    };
+  // Fotoğraf Seçici
+  const handlePhotoSelect = () => {
+    Alert.alert(
+      "Pick a Photo",
+      "Chose a photo from your camera or gallery.",
+      [
+        { text: "Camera", onPress: openCamera },
+        { text: "From Galery", onPress: openGallery },
+        { text: "Cancel", style: "cancel" }
+      ]
+    );
+  };
 
-    await setDoc(doc(db, 'users', userId), profileData);
-    setEditMode(false);
-    console.log("Profil başarıyla kaydedildi.");
-  } catch (error) {
-    console.log('Profil kaydedilirken hata:', error);
-  }
-};
+  const openGallery = async () => {
+    const result = await launchImageLibrary({ mediaType: 'photo' });
+    if (!result.didCancel && result.assets?.length > 0) {
+      uploadImage(result.assets[0]);
+    }
+  };
+
+  const openCamera = async () => {
+    const result = await launchCamera({ mediaType: 'photo' });
+    if (!result.didCancel && result.assets?.length > 0) {
+      uploadImage(result.assets[0]);
+    }
+  };
+
+  const uploadImage = async (asset) => {
+    try {
+      setUploading(true);
+      const response = await fetch(asset.uri);
+      const blob = await response.blob();
+      const imageRef = ref(storage, `profilePictures/${userId}/${uuidv4()}.jpg`);
+      await uploadBytes(imageRef, blob);
+      const downloadURL = await getDownloadURL(imageRef);
+      setLocalProfile((prev) => ({ ...prev, photoURL: downloadURL }));
+      setUploading(false);
+    } catch (error) {
+      console.log("Fotoğraf yüklenemedi:", error);
+      setUploading(false);
+    }
+  };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Profile</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.header}>Profil</Text>
 
-      {profile.photoURL ? (
-        <Image source={{ uri: profile.photoURL }} style={styles.avatar} />
-      ) : (
-        <View style={styles.avatarPlaceholder}><Text>📷</Text></View>
-      )}
+      <Pressable onPress={handlePhotoSelect}>
+        {localProfile.photoURL ? (
+          <Image source={{ uri: localProfile.photoURL }} style={styles.avatar} />
+        ) : (
+          <View style={styles.avatarPlaceholder}><Text>📷</Text></View>
+        )}
+      </Pressable>
 
       {editMode ? (
         <>
           <TextInput
             placeholder="Ad Soyad"
             style={styles.input}
-            value={profile.fullName}
-            onChangeText={(text) => setProfile({ ...profile, fullName: text })}
+            value={localProfile.fullName}
+            onChangeText={(text) => setLocalProfile({ ...localProfile, fullName: text })}
           />
           <TextInput
             placeholder="Telefon"
             style={styles.input}
-            value={profile.phone}
-            onChangeText={(text) => setProfile({ ...profile, phone: text })}
+            value={localProfile.phone}
+            onChangeText={(text) => setLocalProfile({ ...localProfile, phone: text })}
           />
           <TextInput
             placeholder="Sosyal Medya"
             style={styles.input}
-            value={profile.social}
-            onChangeText={(text) => setProfile({ ...profile, social: text })}
+            value={localProfile.social}
+            onChangeText={(text) => setLocalProfile({ ...localProfile, social: text })}
           />
           <Pressable style={styles.button} onPress={handleSave}>
-            <Text style={styles.buttonText}>Kaydet</Text>
+            <Text style={styles.buttonText}>{uploading ? 'Kaydediliyor...' : 'Kaydet'}</Text>
           </Pressable>
         </>
       ) : (
         <>
-          <Text style={styles.label}>Ad Soyad: {profile.fullName}</Text>
-          <Text style={styles.label}>E-posta: {profile.email}</Text>
-          <Text style={styles.label}>Kullanıcı Adı: {profile.username}</Text>
-          <Text style={styles.label}>Telefon: {profile.phone}</Text>
-          <Text style={styles.label}>Sosyal Medya: {profile.social}</Text>
+          <Text style={styles.label}>Ad Soyad: {localProfile.fullName}</Text>
+          <Text style={styles.label}>E-posta: {localProfile.email}</Text>
+          <Text style={styles.label}>Kullanıcı Adı: {localProfile.username}</Text>
+          <Text style={styles.label}>Telefon: {localProfile.phone}</Text>
+          <Text style={styles.label}>Sosyal Medya: {localProfile.social}</Text>
 
           <Pressable style={styles.button} onPress={() => setEditMode(true)}>
             <Text style={styles.buttonText}>Profili Düzenle</Text>
           </Pressable>
         </>
       )}
-    </View>
+    </ScrollView>
   );
 };
 
@@ -113,15 +162,15 @@ export default ProfileScreen;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: 20,
     backgroundColor: '#fff',
-    justifyContent: 'flex-start',
+    flexGrow: 1,
   },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
+    textAlign: 'center'
   },
   avatar: {
     width: 100,

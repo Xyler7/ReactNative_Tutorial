@@ -7,6 +7,7 @@ import TeamScreen from "./TeamScreen";
 import AgendaScreen from "./AgendaScreen";
 import SocialScreen from "./SocialScreen";
 import SettingsScreen from "./SettingsScreen";
+import AccountSettingsScreen from "./AccountSettingsScreen";
 
 export {
   LoginPage,
@@ -18,4 +19,5 @@ export {
   AgendaScreen,
   SocialScreen,
   SettingsScreen,
+  AccountSettingsScreen
 };

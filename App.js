@@ -5,11 +5,15 @@ import { store } from './src/redux/store';
 import { getAllData } from './src/redux/dataSlice';
 import {useDispatch, useSelector} from 'react-redux';
 import { Loading } from './src/components';
+import { ThemeProvider } from './src/context/ThemeContext';
+
 
 const AppWrapper = () => {
   return (
     <Provider store={store}>
-      <App />
+      <ThemeProvider>
+        <RootNavigation />
+      </ThemeProvider>
     </Provider>
   )
 }

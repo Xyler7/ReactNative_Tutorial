@@ -2,6 +2,8 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getAuth, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { use } from "react";
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../firebaseConfig';
 
 export const login = createAsyncThunk('user/login', async ({ email, password }) => {
 
@@ -47,6 +49,22 @@ export const autoLogin = createAsyncThunk('user/autoLogin', async() =>{
     }
 } )
 
+// Fetch User Profile
+export const fetchUserProfile = createAsyncThunk('user/fetchUserProfile', async (uid) => {
+  try {
+    const docRef = doc(db, 'users', uid);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      return docSnap.data(); // profil bilgileri döner
+    } else {
+      throw new Error('Profil bulunamadı.');
+    }
+  } catch (error) {
+    throw error;
+  }
+});
+
 
 //Logout
 
@@ -66,24 +84,21 @@ export const logout = createAsyncThunk('user/logout', async()=>{
 
 //Sign UP
 
-export const register = createAsyncThunk('user/register', async({email, password}) => {
+export const register = createAsyncThunk(
+  'user/register',
+  async ({ email, password }, { rejectWithValue }) => {
     try {
-        const auth = getAuth()
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-
-        const user = userCredential.user
-        const token = user.stsTokenManager.accessToken;
-
-        await sendEmailVerification(user);
-        
-        await AsyncStorage.setItem('userToken', token)
-
-        return token;
-
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      return {
+        uid: userCredential.user.uid,
+        email: userCredential.user.email,
+      };
     } catch (error) {
-        throw error
+      console.error('🚫 Register error:', error);
+      return rejectWithValue(error.message);
     }
-})
+  }
+);
 
 
 
@@ -91,14 +106,20 @@ const initialState ={
     isLoading:false,
     isAuth:false,
     token: null,
+    profile: null,
     user: null,
     error: null
 }
 
 export const userSlice= createSlice({
 
-    name:'user',
-    initialState,
+    name: 'user',
+    initialState: {
+        isLoading: false,
+        isAuth: false,
+        user: null,
+        error: null,
+    },
     reducers:{
         setEmail: (state, action)=>{
             const lowerCaseEmail= action.payload.toLowerCase()
@@ -111,14 +132,10 @@ export const userSlice= createSlice({
             state.isLoading= action.payload
         },
         setUser: (state, action) => {
-            if (action.payload) {
-            state.isAuth = true;
             state.user = action.payload;
-            } else {
-            state.isAuth = false;
-            state.user = null;
-            state.token = null;
-            }}
+            state.isAuth = !!action.payload;
+        },
+        
     },
     extraReducers:(builder)=> {
         builder
@@ -166,24 +183,29 @@ export const userSlice= createSlice({
             state.isLoading = false;
             state.error = action.payload; 
         })
+        .addCase(fetchUserProfile.fulfilled, (state, action) => {
+            state.profile = action.payload;
+        })
+        .addCase(fetchUserProfile.rejected, (state, action) => {
+            state.error = action.error.message;
+        })
 
         .addCase(register.pending, (state) => {
             state.isLoading = true;
-            state.isAuth = false;
+            state.error = null;
         })
         .addCase(register.fulfilled, (state, action) => {
             state.isLoading = false;
+            state.user = action.payload;
             state.isAuth = true;
-            state.token = action.payload;
         })
-        .addCase(register.rejected, (state) => {
+        .addCase(register.rejected, (state, action) => {
             state.isLoading = false;
-            state.isAuth = false;
-            state.error = "Invalid Email or Password!"
-        })
+            state.error = action.payload || 'Kayıt sırasında bir hata oluştu.';
+        });
     }
 })
 
 
-export const {setEmail, setPassword, setIsLoading} =userSlice.actions
+export const {setEmail, setPassword, setIsLoading, setUser} =userSlice.actions
 export default userSlice.reducer
